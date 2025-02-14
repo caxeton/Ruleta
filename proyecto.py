@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import colorchooser, messagebox
-import random
+from tkinter import colorchooser
 import math
 import time
 
@@ -25,6 +24,21 @@ frame_ruleta.grid(row=0, column=0, padx=10)
 frame_controles = tk.Frame(frame_principal)
 frame_controles.grid(row=0, column=1, padx=20)
 
+tk.Label(frame_controles, text="Nueva Opcion", font=("Arial", 12)).pack()
+
+# Frame para agrupar la entrada de opción y el botón de color
+frame_opcion = tk.Frame(frame_controles)
+frame_opcion.pack(pady=5)
+
+# Entrada para la nueva opción
+entrada_opcion = tk.Entry(frame_opcion, font=("Arial", 12))
+entrada_opcion.pack(side=tk.LEFT, padx=5)
+
+# Botón de color sin texto, solo con el color
+color_seleccionado = "#FFFFFF"  # Color por defecto
+boton_color = tk.Button(frame_opcion, bg=color_seleccionado, width=3, height=1, command=lambda: seleccionar_color(boton_color))
+boton_color.pack(side=tk.LEFT)
+
 # Configurar el canvas de la ruleta
 canvas = tk.Canvas(frame_ruleta, width=400, height=400, bg="white")
 canvas.pack()
@@ -32,11 +46,6 @@ canvas.pack()
 # Centro y radio de la ruleta
 cx, cy = 200, 200
 radio = 150
-color_seleccionado = "#FFFFFF"
-
-# Variables para controlar la velocidad y el tiempo
-velocidad_inicial = 15  # Velocidad inicial
-tiempo_parada = 2  # Tiempo en segundos para reducir la velocidad a 0
 
 # Función para dibujar la ruleta
 def dibujar_ruleta(angulo_base=0):
@@ -82,34 +91,44 @@ def girar_ruleta():
         return
 
     # Obtener los valores de velocidad y tiempo desde las entradas
-    velocidad = velocidad_inicial
+    velocidad_inicial = slider_velocidad.get()
     tiempo_total = float(entrada_tiempo_parada.get())  # Obtener tiempo total de la animación
 
-    # Calcular la cantidad de giros en función del tiempo total y la velocidad
-    giros_totales = int(tiempo_total * velocidad_inicial)  # Determina cuántos giros en total basados en el tiempo y velocidad
-
+    # Variables para controlar la animación
     angulo_actual = 0  # Ángulo inicial
-    velocidad_minima = 1  # Velocidad mínima para el giro
+    tiempo_inicio = time.time()  # Tiempo de inicio de la animación
 
     # Función que realiza la animación del giro
-    def animar_giro(giros_restantes, angulo_actual, velocidad):
-        if giros_restantes <= 0:
+    def animar_giro():
+        nonlocal angulo_actual, velocidad_inicial
+
+        # Calcular el tiempo transcurrido
+        tiempo_transcurrido = time.time() - tiempo_inicio
+
+        # Detener la animación si se alcanza el tiempo total
+        if tiempo_transcurrido >= tiempo_total:
             seleccionar_ganador(angulo_actual)
             return
 
-        angulo_actual += velocidad
+        # Reducir la velocidad gradualmente
+        velocidad_actual = velocidad_inicial * (1 - (tiempo_transcurrido / tiempo_total))
+
+        # Actualizar el ángulo de la ruleta
+        angulo_actual += velocidad_actual
         dibujar_ruleta(angulo_actual)
-        root.after(50, animar_giro, giros_restantes - 1, angulo_actual, max(velocidad_minima, velocidad - (velocidad_inicial / (tiempo_total * 2))))  # Llamada recursiva para animación
+
+        # Llamar a la función de animación nuevamente
+        root.after(50, animar_giro)
 
     # Iniciar la animación del giro
-    animar_giro(giros_totales, angulo_actual, velocidad)
+    animar_giro()
 
 # Función para determinar la opción ganadora
 def seleccionar_ganador(angulo_final):
     angulo_inicio = 0
     for opcion, _, porcentaje in opciones:
         angulo_ext = (porcentaje / 100) * 360
-        if angulo_inicio <= angulo_final < angulo_inicio + angulo_ext:
+        if angulo_inicio <= angulo_final % 360 < angulo_inicio + angulo_ext:
             resultado_label.config(text=f"Resultado: {opcion}", fg="black")
             return
         angulo_inicio += angulo_ext
@@ -118,13 +137,11 @@ def seleccionar_ganador(angulo_final):
 def agregar_opcion():
     global porcentaje_total
     nueva_opcion = entrada_opcion.get().strip()
-    porcentaje_str = entrada_porcentaje.get().strip()
+    porcentaje = slider_porcentaje.get()
 
-    if not nueva_opcion or not porcentaje_str.isdigit():
-        resultado_label.config(text="Ingrese un nombre y porcentaje válido", fg="red")
+    if not nueva_opcion:
+        resultado_label.config(text="Ingrese un nombre válido", fg="red")
         return
-
-    porcentaje = int(porcentaje_str)
     
     if porcentaje_total + porcentaje > 100:
         resultado_label.config(text="¡El total supera el 100%!", fg="red")
@@ -133,18 +150,18 @@ def agregar_opcion():
     opciones.append((nueva_opcion, color_seleccionado, porcentaje))
     porcentaje_total += porcentaje
     entrada_opcion.delete(0, tk.END)
-    entrada_porcentaje.delete(0, tk.END)
+    slider_porcentaje.set(10)  # Reiniciar el slider a 10% por defecto
     actualizar_lista_opciones()
     actualizar_porcentaje_total()
     dibujar_ruleta()
 
 # Función para seleccionar un color
-def seleccionar_color():
+def seleccionar_color(boton):
     global color_seleccionado
     color = colorchooser.askcolor(title="Selecciona un color")[1]
     if color:
         color_seleccionado = color
-        etiqueta_color.config(text=f"Color elegido", fg=color)
+        boton.config(bg=color)  # Cambia el color del botón seleccionado
 
 # Función para actualizar la lista de opciones
 def actualizar_lista_opciones():
@@ -157,24 +174,37 @@ def actualizar_lista_opciones():
 def actualizar_porcentaje_total():
     etiqueta_porcentaje_total.config(text=f"Total: {porcentaje_total}%")
 
-# Entrada para agregar opciones
-tk.Label(frame_controles, text="Nueva Opción:", font=("Arial", 12)).pack()
-entrada_opcion = tk.Entry(frame_controles, font=("Arial", 12))
-entrada_opcion.pack(pady=5)
-
-# Entrada para el porcentaje
+# Barra deslizante para elegir porcentaje
 tk.Label(frame_controles, text="Porcentaje (%):", font=("Arial", 12)).pack()
-entrada_porcentaje = tk.Entry(frame_controles, font=("Arial", 12))
-entrada_porcentaje.pack(pady=5)
+slider_porcentaje = tk.Scale(
+    frame_controles, from_=1, to=100, orient=tk.HORIZONTAL,
+    font=("Arial", 12),  # Texto más grande
+    length=250,          # Longitud de la barra
+    sliderlength=30,      # Tamaño del botón deslizante
+    width=15,             # Grosor de la barra
+    showvalue=True
+)
+slider_porcentaje.set(50)  # Valor inicial predeterminado
+slider_porcentaje.pack(pady=1)
 
 # Entrada para controlar el tiempo de parada
 tk.Label(frame_controles, text="Tiempo para parar (segundos):", font=("Arial", 12)).pack()
 entrada_tiempo_parada = tk.Entry(frame_controles, font=("Arial", 12))
+entrada_tiempo_parada.insert(0, "5")  # Valor predeterminado
 entrada_tiempo_parada.pack(pady=5)
 
-# Botón para seleccionar color
-boton_color = tk.Button(frame_controles, text="Seleccionar Color", command=seleccionar_color, font=("Arial", 12), bg="lightgray")
-boton_color.pack(pady=5)
+# Entrada para controlar la velocidad
+tk.Label(frame_controles, text="Velocidad:", font=("Arial", 12)).pack()
+slider_velocidad = tk.Scale(
+    frame_controles, from_=1, to=100, orient=tk.HORIZONTAL,
+    font=("Arial", 12),  # Texto más grande
+    length=250,          # Longitud de la barra
+    sliderlength=30,      # Tamaño del botón deslizante
+    width=15,             # Grosor de la barra
+    showvalue=True
+)
+slider_velocidad.set(50)  # Valor predeterminado
+slider_velocidad.pack(pady=1)
 
 # Etiqueta de color seleccionado
 etiqueta_color = tk.Label(frame_controles, text="Color elegido", font=("Arial", 10))
@@ -196,6 +226,9 @@ etiqueta_porcentaje_total.pack()
 boton = tk.Button(frame_controles, text="Girar", command=girar_ruleta, font=("Arial", 14))
 boton.pack(pady=10)
 
+# Etiqueta para mostrar el resultado
+resultado_label = tk.Label(frame_controles, text="", font=("Arial", 12))
+resultado_label.pack(pady=10)
 
 dibujar_ruleta()
 root.mainloop()
