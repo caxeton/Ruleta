@@ -11,7 +11,7 @@ porcentaje_total = 0  # Controla que no se pase de 100%
 # Crear ventana principal
 root = tk.Tk()
 root.title("Ruleta Personalizada")
-root.geometry("750x500")
+root.geometry("1000x750")
 
 # Crear marco principal
 frame_principal = tk.Frame(root)
@@ -35,8 +35,7 @@ radio = 150
 color_seleccionado = "#FFFFFF"
 
 # Variables para controlar la velocidad y el tiempo
-velocidad_inicial = 15  # Velocidad inicial
-tiempo_parada = 2  # Tiempo en segundos para reducir la velocidad a 0
+velocidad_inicial = 100  # Velocidad inicial
 
 # Función para dibujar la ruleta
 def dibujar_ruleta(angulo_base=0):
@@ -86,10 +85,10 @@ def girar_ruleta():
     tiempo_total = float(entrada_tiempo_parada.get())  # Obtener tiempo total de la animación
 
     # Calcular la cantidad de giros en función del tiempo total y la velocidad
-    giros_totales = int(tiempo_total * velocidad_inicial)  # Determina cuántos giros en total basados en el tiempo y velocidad
+    giros_totales = int(tiempo_total * (velocidad_inicial / 3))  # Determina cuántos giros en total basados en el tiempo y velocidad
 
     angulo_actual = 0  # Ángulo inicial
-    velocidad_minima = 1  # Velocidad mínima para el giro
+    velocidad_minima = 0.1  # Velocidad mínima para el giro
 
     # Función que realiza la animación del giro
     def animar_giro(giros_restantes, angulo_actual, velocidad):
@@ -99,7 +98,7 @@ def girar_ruleta():
 
         angulo_actual += velocidad
         dibujar_ruleta(angulo_actual)
-        root.after(50, animar_giro, giros_restantes - 1, angulo_actual, max(velocidad_minima, velocidad - (velocidad_inicial / (tiempo_total * 2))))  # Llamada recursiva para animación
+        root.after(50, animar_giro, giros_restantes - 1, angulo_actual, max(velocidad_minima, velocidad - (velocidad_inicial / (tiempo_total * (velocidad_inicial / 4)))))  # Llamada recursiva para animación
 
     # Iniciar la animación del giro
     animar_giro(giros_totales, angulo_actual, velocidad)
@@ -156,6 +155,7 @@ def actualizar_lista_opciones():
 # Función para actualizar el porcentaje total mostrado
 def actualizar_porcentaje_total():
     etiqueta_porcentaje_total.config(text=f"Total: {porcentaje_total}%")
+
 
 # Entrada para agregar opciones
 tk.Label(frame_controles, text="Nueva Opción:", font=("Arial", 12)).pack()
