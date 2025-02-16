@@ -10,7 +10,7 @@ porcentaje_total = 0  # Controla que no se pase de 100%
 # Crear ventana principal
 root = tk.Tk()
 root.title("Ruleta Personalizada")
-root.geometry("750x500")
+root.geometry("1150x850")
 
 # Crear marco principal
 frame_principal = tk.Frame(root)
@@ -40,12 +40,12 @@ boton_color = tk.Button(frame_opcion, bg=color_seleccionado, width=3, height=1, 
 boton_color.pack(side=tk.LEFT)
 
 # Configurar el canvas de la ruleta
-canvas = tk.Canvas(frame_ruleta, width=400, height=400, bg="white")
+canvas = tk.Canvas(frame_ruleta, width=800, height=800, bg="white")
 canvas.pack()
 
 # Centro y radio de la ruleta
-cx, cy = 200, 200
-radio = 150
+cx, cy = 400, 400
+radio = 350
 
 # Función para dibujar la ruleta
 def dibujar_ruleta(angulo_base=0):
@@ -125,10 +125,13 @@ def girar_ruleta():
 
 # Función para determinar la opción ganadora
 def seleccionar_ganador(angulo_final):
+    # Ajustar el ángulo final para que sea relativo a la flecha en la parte superior
+    angulo_final_ajustado = (90 - angulo_final) % 360  
+
     angulo_inicio = 0
     for opcion, _, porcentaje in opciones:
         angulo_ext = (porcentaje / 100) * 360
-        if angulo_inicio <= angulo_final % 360 < angulo_inicio + angulo_ext:
+        if angulo_inicio <= angulo_final_ajustado < angulo_inicio + angulo_ext:
             resultado_label.config(text=f"Resultado: {opcion}", fg="black")
             return
         angulo_inicio += angulo_ext
@@ -150,7 +153,7 @@ def agregar_opcion():
     opciones.append((nueva_opcion, color_seleccionado, porcentaje))
     porcentaje_total += porcentaje
     entrada_opcion.delete(0, tk.END)
-    slider_porcentaje.set(10)  # Reiniciar el slider a 10% por defecto
+    slider_porcentaje.set(50)  # Reiniciar el slider a 10% por defecto
     actualizar_lista_opciones()
     actualizar_porcentaje_total()
     dibujar_ruleta()
@@ -230,5 +233,27 @@ boton.pack(pady=10)
 resultado_label = tk.Label(frame_controles, text="", font=("Arial", 12))
 resultado_label.pack(pady=10)
 
-dibujar_ruleta()
+
+
+#AÑAAÑA AÑAAÑA AÑAAÑA AÑAAÑA NO DIGAS ESO PE PTAMRE QUE ME CGA LA CABEZA CAUSA
+# Función para inicializar la ruleta con opciones de prueba
+def inicializar_pruebas():
+    global opciones, porcentaje_total
+    opciones.clear()  # Limpiar la lista de opciones existentes
+    porcentaje_total = 0  # Reiniciar el porcentaje total
+
+    # Agregar 20 opciones con 5% de probabilidad cada una
+    for i in range(1, 51):
+        opciones.append((f"{i}", "white", 2))  # Color único para cada opción
+        porcentaje_total += 2
+
+    # Actualizar la lista de opciones y dibujar la ruleta
+    actualizar_lista_opciones()
+    actualizar_porcentaje_total()
+    dibujar_ruleta()
+
+# Llamar a la función de pruebas después de configurar la interfaz
+root.after(100, inicializar_pruebas)  # Esperar 100 ms para asegurar que la interfaz esté lista
+
+# dibujar_ruleta()
 root.mainloop()
